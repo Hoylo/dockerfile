@@ -1,11 +1,11 @@
 .idea
 /docker-compose/mysql/data/
 /docker-compose/mysql/log/
+!/docker-compose/nginx/confg.d/default.conf
 /docker-compose/nginx/log/
 /docker-compose/nginx/conf.d/
-!/docker-compose/nginx/confg.d/default.conf
 /docker-compose/php/74-fpm/logs/
 /docker-compose/redis/data/
 /docker-compose/redis/logs/
-/docker-compose/www/
 !/docker-compose/www/index.php
+/docker-compose/www/*
