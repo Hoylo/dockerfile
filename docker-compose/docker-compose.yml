@@ -1,0 +1,91 @@
+version: '3'
+services:
+  nginx:
+    build:
+      context: ../nginx
+      args:
+        - NGINX_VER=1.17.9-alpine
+    container_name: nginx_1_17_9
+    privileged: true
+    ports:
+      - "180:80"
+      - "1443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./www:/var/www
+      - ./nginx/log:/var/log/nginx
+    restart: always
+    depends_on:
+      - php
+    networks:
+      nmpr:
+        aliases:
+          - net-nginx-1-17
+  php:
+    build:
+      context: ../php
+      args:
+        - PHP_VER=7.4.5-fpm-alpine3.11
+        - SWOOLE_VER=4.5.1
+        - PHP_REDIS_VER=5.2.2
+        - COMPOSER_URL=https://mirrors.aliyun.com/composer/
+    container_name: php_7_4_5
+    privileged: true
+    restart: always
+    ports:
+      - "9501:9501"
+    expose:
+      - "9000"
+    volumes:
+      - ./php/74-fpm/php-fpm.d/php-fpm.conf:/usr/local/etc/php-fpm.d/php-fpm.conf
+      - ./php/74-fpm/php/php.ini:/usr/local/etc/php/php.ini
+      - ./www:/var/www
+      - ./php/74-fpm/logs:/var/log/php
+    networks:
+      nmpr:
+        aliases:
+          - net-php-7-4-5
+
+  mysql:
+    build:
+      context: ../mysql
+      args:
+        - MYSQL_VER=5.7.29
+    container_name: mysql_5_7_29
+    privileged: true
+    restart: always
+    ports:
+      - "13306:3306"
+    volumes:
+      - ./mysql/log:/var/log/mysql
+      - ./mysql/conf:/etc/mysql
+      - ./mysql/data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=111111
+    networks:
+      nmpr:
+        aliases:
+          - net-mysql-5-7-29
+
+  redis:
+    build:
+      context: ../redis
+      args:
+        - REDIS_VER=6.0-rc-alpine
+    container_name: redis_6_0
+    privileged: true
+    restart: always
+    ports:
+      - "16379:6379"
+    volumes:
+      - ./redis/config:/home/redis
+      - ./redis/data:/data
+      - ./redis/logs:/var/log
+    networks:
+      nmpr:
+        aliases:
+          - net-redis-6-0
+
+networks:
+  nmpr:
+    driver: bridge
