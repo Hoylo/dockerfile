@@ -8,11 +8,11 @@ services:
     container_name: nginx_1_17_9
     privileged: true
     ports:
-      - "180:80"
-      - "1443:443"
+      - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./www:/var/www
+      - ./var/www/:/var/www/
       - ./nginx/log:/var/log/nginx
     restart: always
     depends_on:
@@ -26,9 +26,6 @@ services:
       context: ../php
       args:
         - PHP_VER=7.4.5-fpm-alpine3.11
-        - SWOOLE_VER=4.5.1
-        - PHP_REDIS_VER=5.2.2
-        - COMPOSER_URL=https://mirrors.aliyun.com/composer/
     container_name: php_7_4_5
     privileged: true
     restart: always
@@ -39,7 +36,7 @@ services:
     volumes:
       - ./php/74-fpm/php-fpm.d/php-fpm.conf:/usr/local/etc/php-fpm.d/php-fpm.conf
       - ./php/74-fpm/php/php.ini:/usr/local/etc/php/php.ini
-      - ./www:/var/www
+      - ./var/www/:/var/www/
       - ./php/74-fpm/logs:/var/log/php
     networks:
       nmpr:
@@ -58,8 +55,8 @@ services:
       - "13306:3306"
     volumes:
       - ./mysql/log:/var/log/mysql
-      - ./mysql/conf:/etc/mysql
-      - ./mysql/data:/var/lib/mysql
+      - ./mysql/conf/:/etc/mysql/conf.d/
+      - ./mysql/data/:/var/lib/mysql/
     environment:
       - MYSQL_ROOT_PASSWORD=111111
     networks:
@@ -79,12 +76,12 @@ services:
       - "16379:6379"
     volumes:
       - ./redis/config:/home/redis
-      - ./redis/data:/data
+      - ./redis/data/:/data/:cached
       - ./redis/logs:/var/log
     networks:
       nmpr:
         aliases:
-          - net-redis-6-0
+          - net-redis-6-0      
 
 networks:
   nmpr:
