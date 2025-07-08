@@ -5,84 +5,116 @@ services:
       context: ../nginx
       args:
         - NGINX_VER=1.17.9-alpine
-    container_name: nginx_1_17_9
+    container_name: magento_nginx
     privileged: true
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./var/www/:/var/www/
+      - ./www:/var/www
       - ./nginx/log:/var/log/nginx
     restart: always
     depends_on:
       - php
     networks:
-      nmpr:
+      magento:
         aliases:
-          - net-nginx-1-17
+          - net-magento-nginx
   php:
-    build:
+    build: 
       context: ../php
       args:
-        - PHP_VER=7.4.5-fpm-alpine3.11
-    container_name: php_7_4_5
+        - PHP_VER=8.1.23-fpm-alpine
+        - PHP_REDIS_VER=5.2.2
+        - SWOOLE_VER=4.5.1
+        - COMPOSER_URL=https://mirrors.aliyun.com/composer/
+    container_name: magento_php
     privileged: true
     restart: always
-    ports:
-      - "9501:9501"
     expose:
       - "9000"
+      - "9003"
     volumes:
-      - ./php/74-fpm/php-fpm.d/php-fpm.conf:/usr/local/etc/php-fpm.d/php-fpm.conf
+      - ./www:/var/www
       - ./php/74-fpm/php/php.ini:/usr/local/etc/php/php.ini
-      - ./var/www/:/var/www/
       - ./php/74-fpm/logs:/var/log/php
     networks:
-      nmpr:
+      magento:
         aliases:
-          - net-php-7-4-5
+          - net-magento-php
 
   mysql:
     build:
       context: ../mysql
       args:
-        - MYSQL_VER=5.7.29
-    container_name: mysql_5_7_29
+        - MYSQL_VER=8.0.36
+    container_name: magento_mysql
     privileged: true
     restart: always
     ports:
-      - "13306:3306"
+      - "23306:3306"
     volumes:
       - ./mysql/log:/var/log/mysql
-      - ./mysql/conf/:/etc/mysql/conf.d/
-      - ./mysql/data/:/var/lib/mysql/
+      - ./mysql/data:/var/lib/mysql
     environment:
-      - MYSQL_ROOT_PASSWORD=111111
+      - MYSQL_ROOT_PASSWORD=Root@123
     networks:
-      nmpr:
+      magento:
         aliases:
-          - net-mysql-5-7-29
+          - net-magento-mysql      
 
   redis:
     build:
-      context: ../redis
-      args:
-        - REDIS_VER=6.0-rc-alpine
-    container_name: redis_6_0
+      context: ../redis/6.x
+    container_name: redis_6_2_3
     privileged: true
     restart: always
     ports:
-      - "16379:6379"
+      - "6379:6379"
     volumes:
-      - ./redis/config:/home/redis
-      - ./redis/data/:/data/:cached
+      - ./redis/data:/data
       - ./redis/logs:/var/log
     networks:
-      nmpr:
+      magento:
         aliases:
-          - net-redis-6-0      
+          - net-redis-6-2-3
+
+  elasticsearch:
+    build:
+      context: ../elasticsearch/7_17
+    container_name: elasticsearch_7_17
+    privileged: true
+    environment:
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - ./elasticsearch/data717:/usr/share/elasticsearch/data
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    networks:
+      magento:
+        aliases:
+          - net-elasticsearch-7-17
+
+  rabbitmq:
+    build:
+      context: ../rabbitmq
+    container_name: rabbitmq
+    restart: always
+    hostname: rabbitmq
+    ports:
+      - 15672:15672
+      - 5672:5672
+    environment:
+      - RABBITMQ_ERLANG_COOKIE=peace
+      - RABBITMQ_DEFAULT_USER=root
+      - RABBITMQ_DEFAULT_PASS=root  
+    networks:
+      magento:
+        aliases:
+          - net-rabbitmq-3-8-16                   
 
 networks:
-  nmpr:
+  magento:
     driver: bridge

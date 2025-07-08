@@ -3,27 +3,24 @@ ARG PHP_VER
 FROM php:${PHP_VER}
 
 ARG SWOOLE_VER
-
-ENV IMAGICK_VER=3.4.4 MCRYPT_VER=1.0.4 COMPOSER_URL=https://mirrors.aliyun.com/composer/
-ENV PHP_REDIS_VER=5.3.2 SWOOLE_VER=4.6.0
+ARG PHP_REDIS_VER
+ARG COMPOSER_URL
 
 ADD ./install/swoole-${SWOOLE_VER}.tgz /tmp/
 ADD ./install/redis-${PHP_REDIS_VER}.tgz /tmp/
-ADD ./install/imagick-${IMAGICK_VER}.tgz /tmp/
-ADD ./install/mcrypt-${MCRYPT_VER}.tgz /tmp/
+ADD ./install/xdebug-3.0.4.tgz /tmp/
 
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
     && apk update\
-    && apk add --no-cache autoconf g++ libtool make curl-dev libxml2-dev linux-headers libmcrypt libmcrypt-dev freetype libpng libjpeg-turbo freetype-dev libpng-dev libjpeg-turbo-dev gettext-dev libzip-dev file-dev imagemagick-dev\
+    && apk add --no-cache autoconf g++ libtool make curl-dev libxml2-dev linux-headers libmcrypt libmcrypt-dev freetype libpng libjpeg-turbo freetype-dev libpng-dev jpeg-dev libjpeg libjpeg-turbo-dev gettext-dev libzip-dev icu-dev libxslt-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) mysqli pdo_mysql zip opcache gettext sockets gd bcmath \
-    && cd /tmp/redis-${PHP_REDIS_VER} && phpize && ./configure && make && make install \
-    && cd /tmp/swoole-${SWOOLE_VER} && phpize && ./configure && make && make install \
-    && cd /tmp/imagick-${IMAGICK_VER} && phpize && ./configure && make && make install \
-    && cd /tmp/mcrypt-${MCRYPT_VER} && phpize && ./configure && make && make install \
-    && docker-php-ext-enable swoole redis imagick mcrypt\
+    && docker-php-ext-install -j$(nproc) mysqli pdo_mysql zip opcache gettext sockets gd bcmath intl soap xsl \
+    && cd /tmp/redis-${PHP_REDIS_VER} && phpize && ./configure \
+    --enable-openssl --enable-http2 && make && make install \
+    && cd /tmp/xdebug-3.0.4 && phpize && ./configure && make && make install \
+    && docker-php-ext-enable redis xdebug\
     && docker-php-source delete \
-    && rm -rf /tmp/* \
+    && rm -rf /tmp/* \installer
 ENV COMPOSER_HOME /root/composer
 RUN curl -sS https://install.phpcomposer.com/installer | php -- --install-dir=/usr/local/bin --filename=composer
 ENV PATH $COMPOSER_HOME/vendor/bin:$PATH
